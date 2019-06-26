@@ -175,6 +175,112 @@ public class RouterResponse {
         }
     }
 
+    /// An enum to describe the attributes  (name, value, domain, path etc) of a cookie.
+    public enum CookieAttribute {
+        /// The cookie’s name.
+        case name(String)
+
+        /// The cookie‘s value.
+        case value(String)
+
+        /// The domain of the cookie.
+        case domain(String)
+
+        /// The cookie’s path.
+        case path(String)
+
+        /// The list of ports for the cookie,  an array of NSNumber objects containing integers.
+        case portList([NSNumber]?)
+
+        /// The cookie’s expiration date. The expiration date is the date when the cookie should be deleted.
+        case expires(Date?)
+
+        /// A  value stating how long in seconds the cookie should be kept, at most.
+        case maximumAge(String)
+
+        /// The URL that set this cookie.
+        case originURL(URL?)
+
+        /// The version of the cookie. Must be either 0 or 1. The default is 0.
+        case version(Int)
+
+        /// A String value representing a boolean (TRUE/FALSE), stating whether the cookie should be discarded at the end of the session.
+        case discard(String)
+
+        /// A  boolean value that indicates whether this cookie should only be sent over secure channels.
+        case isSecure(Bool)
+
+        /// A comment for the cookie.
+        case comment(String?)
+
+        /// A URL that can be presented to the user as a link for further information about this cookie.
+        case commentURL(String?)
+    }
+
+    /// Add a cookie to the response.
+    ///
+    /// This function creates an `HTTPCookie`  from the provided attributes and adds it to the `cookies` dictionary.
+    /// - Parameter name: The cookie’s name.
+    /// - Parameter value: The cookie‘s value.
+    /// - Parameter domain: The domain of the cookie.
+    /// - Parameter path: The cookie’s path.
+    /// - Parameter otherAttributes: An array of optional `CookieAttribute`s other
+    /// than name, value, domain,path,these values are ignored
+    /// if they are given in otherAttributes array.
+    public func addCookie(name: String, value: String, domain: String, path: String, otherAttributes: [CookieAttribute] = []) {
+        var cookieProperties = [HTTPCookiePropertyKey: Any]()
+        cookieProperties[HTTPCookiePropertyKey.name] = name
+        cookieProperties[HTTPCookiePropertyKey.value] = value
+        cookieProperties[HTTPCookiePropertyKey.domain] = domain
+        cookieProperties[HTTPCookiePropertyKey.path] = path
+
+        for attribute in otherAttributes {
+            switch attribute {
+            case .name, .value, .domain, .path:
+                Log.info("The \(attribute) value if supplied through otherAtrributes array is ignored.")
+                continue
+            case .portList(let ports):
+                if let ports = ports {
+                    cookieProperties[HTTPCookiePropertyKey.port] = ports
+                }
+
+            case .expires(let expiresDate):
+                if let expiresDate = expiresDate {
+                    cookieProperties[HTTPCookiePropertyKey.expires] = expiresDate
+                }
+
+            case .maximumAge(let maxAge):
+                cookieProperties[HTTPCookiePropertyKey.maximumAge] = maxAge
+
+            case .originURL(let originURL):
+                cookieProperties[HTTPCookiePropertyKey.originURL] = originURL
+
+            case .version(let cookieVersion):
+                cookieProperties[HTTPCookiePropertyKey.version] = cookieVersion
+
+            case .discard(let discard):
+                cookieProperties[HTTPCookiePropertyKey.discard] = discard
+
+            case .isSecure(let secure):
+                cookieProperties[HTTPCookiePropertyKey.secure] = secure ? "YES" : "NO"
+
+            case .comment(let comment):
+                if let comment = comment {
+                    cookieProperties[HTTPCookiePropertyKey.comment] = comment
+                }
+
+            case .commentURL(let commentURL):
+                if let commentURL = commentURL {
+                    cookieProperties[HTTPCookiePropertyKey.commentURL] = commentURL
+                }
+            }
+        }
+
+        if let cookie = HTTPCookie(properties: cookieProperties) {
+            cookies[cookie.name] = cookie
+        }
+    }
+
     // MARK: End
     
     /// End the response.
